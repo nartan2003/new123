@@ -3,17 +3,21 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import os
+import json
 
 app = Flask(__name__)
 
 # Google Sheets Setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-import json
 
+# Load credentials from environment variable
 creds_json = os.environ.get("GOOGLE_CREDS_JSON")
+
+if not creds_json:
+    raise Exception("GOOGLE_CREDS_JSON environment variable is not set.")
+
 creds_dict = json.loads(creds_json)
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
 client = gspread.authorize(creds)
 
 # Main Google Sheet name
@@ -40,9 +44,10 @@ def get_current_week_tab():
 
     return worksheet
 
-# HTML UI Template
-SHEET_ID = "1m57mjkgMr1JLrpPapV-pNOZva-8zeY_8wtJlyFbbhQQ"  # your actual Sheet ID
+# Sheet ID for download button
+SHEET_ID = "1m57mjkgMr1JLrpPapV-pNOZva-8zeY_8wtJlyFbbhQQ"
 
+# HTML UI Template
 form_html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -132,9 +137,9 @@ form_html = f"""
     <label>Go Live Mgr</label>
     <input name="golive_mgr" required>
 
-    <label>status</label>
+    <label>Current Status</label>
     <input name="status" required>
-   
+
     <label>Dashboard Status</label>
     <input name="dashboard_status" required>
 
@@ -146,7 +151,6 @@ form_html = f"""
 </body>
 </html>
 """
-
 
 @app.route("/", methods=["GET", "POST"])
 def dashboard():
@@ -166,5 +170,5 @@ def dashboard():
     return render_template_string(form_html)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # For Railway
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
